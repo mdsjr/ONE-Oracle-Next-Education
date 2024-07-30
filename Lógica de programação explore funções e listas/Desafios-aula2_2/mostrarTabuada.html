@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Tabuada</title>
+<script>
+function mostrarTabuada() {
+  // Obter o número do campo de entrada
+  var numero = parseInt(document.getElementById("numero").value);
+
+  // Validar se o número é válido
+  if (isNaN(numero)) {
+    alert("Por favor, insira um número válido.");
+    return;
+  }
+
+  // Gerar a tabuada
+  var tabuada = "";
+  for (var i = 1; i <= 10; i++) {
+    tabuada += numero + " x " + i + " = " + (numero * i) + "<br>";
+  }
+
+  // Exibir a tabuada
+  document.getElementById("resultadoTabuada").innerHTML = tabuada;
+}
+</script>
+</head>
+<body>
+
+<h2>Tabuada</h2>
+
+<label for="numero">Número:</label>
+<input type="number" id="numero" name="numero"><br><br>
+
+<button type="button" onclick="mostrarTabuada()">Mostrar Tabuadas</button>
+
+<div id="resultadoTabuada"></div>
+
+</body>
+</html>

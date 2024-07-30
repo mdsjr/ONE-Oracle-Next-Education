@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Conversor Dólar-Real</title>
+<script>
+function converterDolarParaReal(valorEmDolar) {
+  const cotacaoDolar = 5.62;
+  const valorEmReal = valorEmDolar * cotacaoDolar;
+  return valorEmReal;
+}
+
+function converter() {
+  const valorEmDolar = parseFloat(document.getElementById("valorDolar").value);
+  
+  if (isNaN(valorEmDolar)) {
+    alert("Por favor, insira um valor válido em dólar.");
+    return;
+  }
+
+  const valorEmReal = converterDolarParaReal(valorEmDolar);
+  document.getElementById("resultado").textContent = `R$ ${valorEmReal.toFixed(2)}`;
+}
+</script>
+</head>
+<body>
+  <label for="valorDolar">Valor em dólar (US$):</label>
+  <input type="number" id="valorDolar" name="valorDolar"><br><br>
+
+  <button type="button" onclick="converter()">Converter</button>
+
+  <p id="resultado"></p>
+</body>
+</html>
