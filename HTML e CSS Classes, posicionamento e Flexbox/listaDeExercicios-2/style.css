@@ -1,0 +1,30 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+
+.titulo-blog {
+    color: blue;
+    font-weight: bold;
+  
+
+}
+
+.texto-destaque {
+    color: #d4af37;
+    font-weight: bold;
+    width: 250px; /* Largura do conteúdo */
+    background-color: lightblue; /* Cor de fundo para visualizar o content */
+    margin: 20px; /* Margem externa */
+    padding: 15px; /* Espaçamento interno */
+    border: 2px solid red; /* Borda */
+}
+
+.urgente {
+    color: red;
+    font-weight: bold;
+}
+
+body {
+    height: 100vh;
+}
