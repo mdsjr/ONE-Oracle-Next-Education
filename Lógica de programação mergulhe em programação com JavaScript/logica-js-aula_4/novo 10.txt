@@ -1,0 +1,29 @@
+Filtro analisado: coluna = cabeçalho-1, comparador = 1, valor = 1
+Filtro analisado: coluna = cabeçalho-2, comparador = 0, valor = 2
+Filtro analisado: coluna = cabeçalho-3, comparador = 2, valor = 6
+Cabeçalhos CSV analisados:
+cabeçalho-1 cabeçalho-2 cabeçalho-3
+Linhas CSV analisadas:
+1 2 3
+4 5 6
+7 8 9
+Filtros:
+Coluna: cabeçalho-1, Comparador: 1, Valor: 1
+Coluna: cabeçalho-2, Comparador: 0, Valor: 2
+Coluna: cabeçalho-3, Comparador: 2, Valor: 6
+Índices de Colunas Selecionadas:
+0 2
+cabeçalho-1,cabeçalho-3
+Aplicando filtro: celula = 1, comparador = 1, valor = 1
+Comparando como números: valorCelula = 1.000000, valorFiltro = 1.000000
+Linha não passa no filtro: cabeçalho-1 1 1
+Aplicando filtro: celula = 4, comparador = 1, valor = 1
+Comparando como números: valorCelula = 4.000000, valorFiltro = 1.000000
+Aplicando filtro: celula = 5, comparador = 0, valor = 2
+Comparando como números: valorCelula = 5.000000, valorFiltro = 2.000000
+Linha não passa no filtro: cabeçalho-2 0 2
+Aplicando filtro: celula = 7, comparador = 1, valor = 1
+Comparando como números: valorCelula = 7.000000, valorFiltro = 1.000000
+Aplicando filtro: celula = 8, comparador = 0, valor = 2
+Comparando como números: valorCelula = 8.000000, valorFiltro = 2.000000
+Linha não passa no filtro: cabeçalho-2 0 2

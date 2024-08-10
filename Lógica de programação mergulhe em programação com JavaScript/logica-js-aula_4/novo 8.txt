@@ -1,0 +1,278 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "csv_processor.h"
+
+// Função auxiliar para dividir uma string por um delimitador
+char** splitString(const char* str, const char* delimiter, int* count) {
+    char* strCopy = strdup(str);
+    int capacity = 10;
+    char** result = malloc(capacity * sizeof(char*));
+    *count = 0;
+
+    char* token = strtok(strCopy, delimiter);
+    while (token != NULL) {
+        if (*count >= capacity) {
+            capacity *= 2;
+            result = realloc(result, capacity * sizeof(char*));
+        }
+        result[*count] = strdup(token);
+        (*count)++;
+        token = strtok(NULL, delimiter);
+    }
+    free(strCopy);
+    return result;
+}
+
+// Estrutura para armazenar dados CSV
+typedef struct {
+    char** headers;
+    int headerCount;
+    char*** rows;
+    int rowCount;
+} CsvData;
+
+CsvData* parseCsv(const char* csv) {
+    CsvData* data = malloc(sizeof(CsvData));
+    char** lines = splitString(csv, "\n", &data->rowCount);
+    data->headers = splitString(lines[0], ",", &data->headerCount);
+
+    data->rows = malloc((data->rowCount - 1) * sizeof(char**));
+    for (int i = 1; i < data->rowCount; i++) {
+        int columnCount;
+        data->rows[i - 1] = splitString(lines[i], ",", &columnCount);
+    }
+    data->rowCount -= 1;
+
+    for (int i = 0; i <= data->rowCount; i++) {
+        free(lines[i]);
+    }
+    free(lines);
+
+    return data;
+}
+
+void freeCsvData(CsvData* data) {
+    for (int i = 0; i < data->headerCount; i++) {
+        free(data->headers[i]);
+    }
+    free(data->headers);
+
+    for (int i = 0; i < data->rowCount; i++) {
+        for (int j = 0; j < data->headerCount; j++) {
+            free(data->rows[i][j]);
+        }
+        free(data->rows[i]);
+    }
+    free(data->rows);
+    free(data);
+}
+
+typedef enum {
+    EQUAL,
+    GREATER,
+    LESS
+} Comparator;
+
+typedef struct {
+    char* column;
+    Comparator comparator;
+    char* value;
+} Filter;
+
+Comparator parseComparator(const char* str) {
+    if (strcmp(str, "=") == 0) {
+        return EQUAL;
+    } else if (strcmp(str, ">") == 0) {
+        return GREATER;
+    } else if (strcmp(str, "<") == 0) {
+        return LESS;
+    }
+    return EQUAL; // caso padrão
+}
+
+Filter* parseFilters(const char* rowFilterDefinitions, int* filterCount) {
+    char** lines = splitString(rowFilterDefinitions, "\n", filterCount);
+    Filter* filters = malloc(*filterCount * sizeof(Filter));
+
+    for (int i = 0; i < *filterCount; i++) {
+        char* line = strdup(lines[i]);
+        char* column = strtok(line, "=><");
+        char* comparatorStr = line + strlen(column);
+        char* value = comparatorStr + 1;
+        filters[i].column = strdup(column);
+        filters[i].comparator = parseComparator(comparatorStr);
+        filters[i].value = strdup(value);
+        free(line);
+
+        // Debug: print parsed filter
+        printf("Parsed filter: column=%s, comparator=%d, value=%s\n", filters[i].column, filters[i].comparator, filters[i].value);
+    }
+
+    for (int i = 0; i < *filterCount; i++) {
+        free(lines[i]);
+    }
+    free(lines);
+
+    return filters;
+}
+
+int applyFilter(const char* cell, Comparator comparator, const char* value) {
+    printf("Applying filter: cell=%s, comparator=%d, value=%s\n", cell, comparator, value);
+    switch (comparator) {
+        case EQUAL:
+            return strcmp(cell, value) == 0;
+        case GREATER:
+            return atof(cell) > atof(value);
+        case LESS:
+            return atof(cell) < atof(value);
+    }
+    return 0;
+}
+
+int rowPassesFilters(char** row, CsvData* data, Filter* filters, int filterCount) {
+    for (int i = 0; i < filterCount; i++) {
+        int columnIndex = -1;
+        for (int j = 0; j < data->headerCount; j++) {
+            if (strcmp(data->headers[j], filters[i].column) == 0) {
+                columnIndex = j;
+                break;
+            }
+        }
+        if (columnIndex == -1 || !applyFilter(row[columnIndex], filters[i].comparator, filters[i].value)) {
+            printf("Linha não passa no filtro: %s %d %s\n", filters[i].column, filters[i].comparator, filters[i].value);
+            return 0;
+        }
+    }
+    printf("A linha passa por todos os filtros\n");
+    return 1;
+}
+
+int* getSelectedColumnIndices(const char* selectedColumns, CsvData* data, int* selectedCount) {
+    char** columns = splitString(selectedColumns, ",", selectedCount);
+    int* indices = malloc(*selectedCount * sizeof(int));
+
+    for (int i = 0; i < *selectedCount; i++) {
+        indices[i] = -1;
+        for (int j = 0; j < data->headerCount; j++) {
+            if (strcmp(columns[i], data->headers[j]) == 0) {
+                indices[i] = j;
+                break;
+            }
+        }
+    }
+
+    for (int i = 0; i < *selectedCount; i++) {
+        free(columns[i]);
+    }
+    free(columns);
+
+    return indices;
+}
+
+void processCsv(const char csv[], const char selectedColumns[], const char rowFilterDefinitions[]) {
+    CsvData* data = parseCsv(csv);
+    int filterCount;
+    Filter* filters = parseFilters(rowFilterDefinitions, &filterCount);
+    int selectedCount;
+    int* selectedIndices = getSelectedColumnIndices(selectedColumns, data, &selectedCount);
+
+    // Debug: imprimir dados CSV analisados
+    printf("Cabeçalhos CSV analisados:\n");
+    for (int i = 0; i < data->headerCount; i++) {
+        printf("%s ", data->headers[i]);
+    }
+    printf("\nLinhas CSV analisadas:\n");
+    for (int i = 0; i < data->rowCount; i++) {
+        for (int j = 0; j < data->headerCount; j++) {
+            printf("%s ", data->rows[i][j]);
+        }
+        printf("\n");
+    }
+
+    // Debug: filtros de impressão
+    printf("Filters:\n");
+    for (int i = 0; i < filterCount; i++) {
+        printf("Coluna: %s, Comparador: %d, Valor: %s\n", filters[i].column, filters[i].comparator, filters[i].value);
+    }
+
+    // Debug: imprimir colunas selecionadas
+    printf("Índices de Colunas Selecionadas:\n");
+    for (int i = 0; i < selectedCount; i++) {
+        printf("%d ", selectedIndices[i]);
+    }
+    printf("\n");
+
+    // Imprimir os cabeçalhos selecionados
+    for (int i = 0; i < selectedCount; i++) {
+        if (i > 0) printf(",");
+        printf("%s", data->headers[selectedIndices[i]]);
+    }
+    printf("\n");
+
+    // Processar cada linha
+    for (int i = 0; i < data->rowCount; i++) {
+        if (rowPassesFilters(data->rows[i], data, filters, filterCount)) {
+            for (int j = 0; j < selectedCount; j++) {
+                if (j > 0) printf(",");
+                printf("%s", data->rows[i][selectedIndices[j]]);
+            }
+            printf("\n");
+        }
+    }
+
+    freeCsvData(data);
+    free(filters);
+    free(selectedIndices);
+}
+
+void processCsvFile(const char csvFilePath[], const char selectedColumns[], const char rowFilterDefinitions[]) {
+    FILE* file = fopen(csvFilePath, "r");
+    if (file == NULL) {
+        perror("Falha ao abrir arquivo");
+        return;
+    }
+
+    fseek(file, 0, SEEK_END);
+    long fileSize = ftell(file);
+    fseek(file, 0, SEEK_SET);
+
+    char* csvData = malloc(fileSize + 1);
+    fread(csvData, 1, fileSize, file);
+    csvData[fileSize] = '\0';
+
+    fclose(file);
+
+    processCsv(csvData, selectedColumns, rowFilterDefinitions);
+
+    free(csvData);
+}
+Filtro analisado: coluna = cabeçalho-1, comparador = 1, valor = 1
+Filtro analisado: coluna = cabeçalho-2, comparador = 0, valor = 2
+Filtro analisado: coluna = cabeçalho-3, comparador = 2, valor = 6
+Cabeçalhos CSV analisados:
+cabeçalho-1 cabeçalho-2 cabeçalho-3
+Linhas CSV analisadas:
+1 2 3
+4 5 6
+7 8 9
+Filtros:
+Coluna: cabeçalho-1, Comparador: 1, Valor: 1
+Coluna: cabeçalho-2, Comparador: 0, Valor: 2
+Coluna: cabeçalho-3, Comparador: 2, Valor: 6
+Índices de Colunas Selecionadas:
+0 2
+cabeçalho-1,cabeçalho-3
+Aplicando filtro: celula = 1, comparador = 1, valor = 1
+Comparando como números: valorCelula = 1.000000, valorFiltro = 1.000000
+Linha não passa no filtro: cabeçalho-1 1 1
+Aplicando filtro: celula = 4, comparador = 1, valor = 1
+Comparando como números: valorCelula = 4.000000, valorFiltro = 1.000000
+Aplicando filtro: celula = 5, comparador = 0, valor = 2
+Comparando como números: valorCelula = 5.000000, valorFiltro = 2.000000
+Linha não passa no filtro: cabeçalho-2 0 2
+Aplicando filtro: celula = 7, comparador = 1, valor = 1
+Comparando como números: valorCelula = 7.000000, valorFiltro = 1.000000
+Aplicando filtro: celula = 8, comparador = 0, valor = 2
+Comparando como números: valorCelula = 8.000000, valorFiltro = 2.000000
+Linha não passa no filtro: cabeçalho-2 0 2
